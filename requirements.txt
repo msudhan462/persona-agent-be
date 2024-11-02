@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pymongo
+openai
+transformers
+torch
+pinecone
+groq
+jwt
+pyjwt 
+python-dotenv
+bcrypt==4.0.1
+boto3
