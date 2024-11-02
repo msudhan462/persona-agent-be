@@ -1,0 +1,36 @@
+conversations
+1. message-id (same id for user and assistant)
+2. role
+3. content
+4. datetime
+5. persona-id
+6. conv id 
+7. user-email
+8. (optional) post_id
+
+reactions
+1. message-id
+2. datetime 
+3. persona id
+4. conv id
+5. emoji
+6. user-email
+
+reports
+1. message-id
+2. role
+3. content
+4. datetime 
+5. persona id
+6. conv id
+7. reporting message
+8. user-email
+
+likes_dislikes
+1. message-id
+2. role
+3. datetime
+4. persona id
+5. conv id
+6. like - true (dislike - true)
+7. user-email
