@@ -17,8 +17,8 @@ mongo_db = mongo.MongoDB()
 # AWS S3 Configuration
 S3_BUCKET = 'persona-agent'
 S3_REGION = 'us-east-1'
-S3_ACCESS_KEY = 'AKIAZVMTUULJZLLFXVRI'
-S3_SECRET_KEY = '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'
+S3_ACCESS_KEY = ''
+S3_SECRET_KEY = ''
 
 
 # Allowed extensions for file uploads
