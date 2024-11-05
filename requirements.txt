@@ -6,7 +6,6 @@ transformers
 torch
 pinecone
 groq
-jwt
 pyjwt 
 python-dotenv
 bcrypt==4.0.1
