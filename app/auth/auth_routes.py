@@ -8,7 +8,7 @@ from app.db.mongo import mongo_db
 from uuid import uuid4
 
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/api/auth")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
