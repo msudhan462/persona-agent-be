@@ -60,7 +60,8 @@ class Chat():
         }   
         r = mongo_db.insert(db="persona",collection="conversations", records=record)
         embd = get_embeddings(prompt)[0].tolist()
-        context = pc.vector_db.search(embd)
+        filters = {"persona": {"$eq": persona_id}}
+        context = pc.vector_db.search(embd, filters=filters)
 
         text = ""
         for c in context["matches"]:
