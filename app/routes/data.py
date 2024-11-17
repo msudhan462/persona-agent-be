@@ -39,6 +39,12 @@ async def get_qa(body:GetQA, current_user=Depends(get_current_user)):
     print(current_user)
     return data.get_qa(body, current_user)
 
+
+@router.get("/get-qa-all", status_code=200, summary="get Q&A all")
+async def get_qa(current_user=Depends(get_current_user)):
+    print(current_user)
+    return data.get_qa_all(current_user)
+
 @router.get("/get-text", status_code=200, summary="get text")
 async def get_text(current_user=Depends(get_current_user)):
     print(current_user)

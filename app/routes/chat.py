@@ -54,6 +54,6 @@ async def get_interactions(current_user=Depends(get_current_user)):
     return chat.list_interactions(current_user)
 
 @router.post("/list-agents", status_code=200, summary="get others interacted with your agents")
-async def get_agents(body: GetAgents, current_user=Depends(get_current_user)):
-    print(body, current_user)
-    return chat.list_agents(body, current_user)
+async def get_agents(current_user=Depends(get_current_user)):
+    print(current_user)
+    return chat.list_agents(current_user)

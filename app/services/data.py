@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from uuid import uuid4
 from app.services.utils import get_datetime
 from fastapi.encoders import jsonable_encoder
+from app.services.qa import personas_qa
 
 mongo_db = mongo.MongoDB()
 
@@ -215,6 +216,7 @@ class Data:
                 "type": "file"
             }
             records = mongo_db.find(db="persona",collection="data_ingestion", filters= filters, many=True, projection={"_id":0})
+            print(list(records))    
             return JSONResponse(
                 content=jsonable_encoder({'message': 'Successfully fetcted',"data":records}),
                 status_code=200
@@ -256,6 +258,41 @@ class Data:
                 status_code=400
             )
     
+    def get_qa_all(self, current_user):
+
+        try:
+            filters = {
+                "email": current_user['email'],
+                "type": "qa"
+            }
+
+            records = mongo_db.find(db="persona",collection="data_ingestion", filters= filters, many=True, projection={"_id":0})
+
+            data = dict()
+            for r in records: # assume user saved only 15 QA's
+                qn = r['data']['question_number']
+                data.update({int(qn):{
+                    "qn":qn,
+                    "answer":r['data']['answer'],
+                    'question':r['data']['question'],
+                    'qtype':r['data']['qtype']
+                }})
+            print(data)
+            data = {**personas_qa,**data}
+            print(data)
+            final_data = [ value for key, value in dict(sorted(data.items())).items()]
+            print(final_data)
+            return JSONResponse(
+                content=jsonable_encoder({'message': 'Successfully fetcted',"data":final_data}),
+                status_code=200
+            )
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            return JSONResponse(
+                content=jsonable_encoder({'message': 'unable to q and a'}),
+                status_code=400
+            )
     def get_text(self, current_user):
         try:
 

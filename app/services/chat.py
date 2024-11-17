@@ -322,25 +322,44 @@ class Chat():
                 status_code=400
             )
     
-    def list_agents(self, body, current_user):
+    def list_agents(self, current_user):
 
         try:
             # pagination
 
-            persona_id = body.persona_id
-
+            # conversation profiles
             filters = {
-                "persona_id":persona_id
+                "email":current_user['email']
             }
             projection = {
                 "_id":0,
-                "persona_id":1
+                "persona_id":1,
             }
             
             records = list(mongo_db.find(db="persona",collection="conversations", filters=filters, many=True, projection=projection))
-            
+            unique_personas = set()
+            for r in records:
+                unique_personas.add(r['persona_id'])
+
+            # user profiles
+            user_filters = {
+                "persona_id": {"$in":list(unique_personas)}
+            }
+            user_projection = {
+                "_id":0,
+                "persona_id":1,
+                "name":1
+            }
+            user_records = list(mongo_db.find(db="auth",collection="users", filters=user_filters, many=True, projection=user_projection))
+
+            user_records = [
+                {"persona_id":"sachin", "name":"Sachin tendulkar"},
+                {"persona_id":"elon_musk", "name":"Elon Musk"},
+                {"persona_id":"jeff_bezos", "name":"Jeff Bezos"},
+            ]
+    
             return JSONResponse(
-                content=jsonable_encoder({'message': 'Successfully your agent',"data":records}),
+                content=jsonable_encoder({'message': 'Successfully your agent',"data":user_records}),
                 status_code=200
             )
         except Exception as e:
