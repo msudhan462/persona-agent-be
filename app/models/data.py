@@ -20,3 +20,9 @@ class GetQA(BaseModel):
 class DeleteFile(BaseModel):
 
     file_id: str
+
+
+
+class DeleteText(BaseModel):
+
+    id: str

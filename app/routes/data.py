@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, UploadFile, File
 from app.models.data import *
 from app.services.data import data
 from app.auth_top_routers import get_current_user
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/v1/data")
 
 # POST request to create an item
 @router.post("/ingest/file", status_code=200, summary="ingest file")
-async def ingest_file(file: UploadFile, current_user=Depends(get_current_user)):
+async def ingest_file(file: UploadFile=File(...), current_user=Depends(get_current_user)):
     print(file, current_user)
     return data.upload_file(file, current_user)
 
@@ -49,3 +49,10 @@ async def get_qa(current_user=Depends(get_current_user)):
 async def get_text(current_user=Depends(get_current_user)):
     print(current_user)
     return data.get_text(current_user)
+
+
+    # 
+@router.delete("/delete-text", status_code=200, summary="delete files")
+async def delete_file(body:DeleteText, current_user=Depends(get_current_user)):
+    print(body, current_user)
+    return data.delete_text(body, current_user)

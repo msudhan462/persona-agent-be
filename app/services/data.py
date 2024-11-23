@@ -10,6 +10,10 @@ from uuid import uuid4
 from app.services.utils import get_datetime
 from fastapi.encoders import jsonable_encoder
 from app.services.qa import personas_qa
+import os
+
+from dotenv import load_dotenv
+load_dotenv('app/.env')
 
 mongo_db = mongo.MongoDB()
 
@@ -18,8 +22,8 @@ mongo_db = mongo.MongoDB()
 # AWS S3 Configuration
 S3_BUCKET = 'persona-agent'
 S3_REGION = 'us-east-1'
-S3_ACCESS_KEY = ''
-S3_SECRET_KEY = ''
+S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.getenv('S3_SECRET_KEY')
 
 
 # Allowed extensions for file uploads
@@ -60,7 +64,7 @@ class Data:
                 try:
                     # Upload file to S3
                     s3_client.upload_fileobj(
-                        file.file.read(),                  # The file to upload
+                        file.file,                  # The file to upload
                         S3_BUCKET,             # The S3 bucket name
                         filename,              # The S3 object name (same as filename)
                     )
@@ -69,6 +73,7 @@ class Data:
                     file_url = f'https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{filename}'
                     
                     file_id = str(uuid4())
+                    row_id = str(uuid4())
                     data = {
                             "s3_bucket":S3_BUCKET,
                             "s3_region":S3_REGION,
@@ -78,6 +83,7 @@ class Data:
                         }
                     dt = get_datetime()
                     record = {
+                        "id":row_id,
                         "type": "file",
                         "data":data,
                         "is_deleted": False,
@@ -91,13 +97,17 @@ class Data:
                         status_code=201
                     )
 
-                except (NoCredentialsError, PartialCredentialsError) as e:            
+                except (NoCredentialsError, PartialCredentialsError) as e:   
+                    print(traceback.format_exc())
+
                     return JSONResponse(
                         content=jsonable_encoder({'message':'Credentials not available or incomplete'}),
                         status_code=403
                     )
                 
                 except Exception as e:
+                    print(traceback.format_exc())
+
                     return JSONResponse(
                         content=jsonable_encoder({'message':f'An error occurred: {str(e)}'}),
                         status_code=500
@@ -133,7 +143,9 @@ class Data:
                     }
                 
                 dt = get_datetime()
+                row_id = str(uuid4())
                 record = {
+                    "id":row_id,
                     "type": "qa",
                     "data":data,
                     "email":current_user['email'],
@@ -184,18 +196,25 @@ class Data:
             text = body.text
 
             dt = get_datetime()
+            row_id = str(uuid4())
             record = {
+                "id":row_id,
                 "type": "text",
                 "data":{
                     "text":text
                 },
                 "email":current_user['email'],
-                "datetime":dt
+                "datetime":dt,
+                'is_deleted': False
             }
             r = mongo_db.insert(db="persona",collection="data_ingestion", records=record)
             print(r)
+
+            if "_id" in record:
+                del record['_id']
+
             return JSONResponse(
-                content=jsonable_encoder({'message': "Successfully stored"}),
+                content=jsonable_encoder({'message': "Successfully stored","data":record }),
                 status_code=200
             )
         except Exception as e:
@@ -216,7 +235,8 @@ class Data:
                 "type": "file"
             }
             records = mongo_db.find(db="persona",collection="data_ingestion", filters= filters, many=True, projection={"_id":0})
-            print(list(records))    
+            records = list(records)   
+            print(records) 
             return JSONResponse(
                 content=jsonable_encoder({'message': 'Successfully fetcted',"data":records}),
                 status_code=200
@@ -226,7 +246,7 @@ class Data:
             print(traceback.format_exc())
             return JSONResponse(
                 content=jsonable_encoder({'message': 'unable to get files'}),
-                status_code=400
+                status_code=400 
             )
     
     def get_qa(self, body, current_user):
@@ -277,11 +297,8 @@ class Data:
                     'question':r['data']['question'],
                     'qtype':r['data']['qtype']
                 }})
-            print(data)
             data = {**personas_qa,**data}
-            print(data)
             final_data = [ value for key, value in dict(sorted(data.items())).items()]
-            print(final_data)
             return JSONResponse(
                 content=jsonable_encoder({'message': 'Successfully fetcted',"data":final_data}),
                 status_code=200
@@ -299,9 +316,13 @@ class Data:
             filters = {
                 "type": "text",
                 "email": current_user['email'],
+                "is_deleted": False
             }
+            print(filters)
 
             records = mongo_db.find(db="persona",collection="data_ingestion", filters= filters, many=True, projection={"_id":0})
+            records = list(records)
+            print("GET TEXT", records)
             return JSONResponse(
                 content=jsonable_encoder({'message': 'Successfully fetcted',"data":records}),
                 status_code=200
@@ -314,21 +335,57 @@ class Data:
                 status_code=400
             )
     
+    def delete_text(self, body, current_user):
+        try:
+
+            filters = {
+                "id":body.id,
+                "type": "text",
+                "email": current_user['email']
+            }
+            print(filters)
+            records = { "$set": { "is_deleted": True } }
+
+            is_deleted = mongo_db.update(db="persona",collection="data_ingestion", filters= filters, records=records)
+            print(is_deleted)
+            
+            filters.update({
+              "is_deleted": True  
+            })
+
+            return JSONResponse(
+                content=jsonable_encoder({'message': 'Successfully deleted',"data":filters}),
+                status_code=200
+            )
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            return JSONResponse(
+                content=jsonable_encoder({'message': 'unable to delete file'}),
+                status_code=400
+            )
+
+
     def delete_file(self, body, current_user):
         try:
 
             filters = {
                 "type": "file",
                 "email": current_user['email'],
-                "data":{
-                    "file_id":body.file_id
-                }
+                "data.file_id":body.file_id
             }
+            print(filters)
             records = { "$set": { "is_deleted": True } }
 
-            records = mongo_db.update(db="persona",collection="data_ingestion", filters= filters, many=True, projection={"_id":0})
+            is_deleted = mongo_db.update(db="persona",collection="data_ingestion", filters= filters, records=records)
+            print(is_deleted)
+            
+            filters.update({
+              "is_deleted": True  
+            })
+
             return JSONResponse(
-                content=jsonable_encoder({'message': 'Successfully deleted',"data":records}),
+                content=jsonable_encoder({'message': 'Successfully deleted',"data":filters}),
                 status_code=200
             )
         except Exception as e:
