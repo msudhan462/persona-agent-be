@@ -1,12 +1,11 @@
 from pydantic import BaseModel
-from typing import List
-
+from typing import Optional
 
 # Shared properties for the item
 class Convsersation(BaseModel):
     prompt: str
     persona_id: str
-    conversation_id: str
+    conversation_id: Optional[str] = None
 
 class Report(BaseModel):
     message_id: str

@@ -36,7 +36,7 @@ class Chat():
         print("In interaction...........")
         print()
 
-        prompt = body.prompt
+        prompt = body.prompt    
         persona_id = body.persona_id
         conversation_id = body.conversation_id
 
@@ -45,7 +45,11 @@ class Chat():
             "content":1,
             "role":1
         }
-        history = self.get_chat_history(persona_id, conversation_id, projection)
+        history = []
+        if conversation_id is not None:
+            history = self.get_chat_history(persona_id, conversation_id, projection)
+
+        conversation_id = body.conversation_id if body.conversation_id else str(uuid4())
 
         dt = get_datetime()
         message_id = str(uuid4())
@@ -104,8 +108,14 @@ class Chat():
             }
             mongo_db.insert(db="persona",collection="conversations", records=record)
 
-
-        return StreamingResponse(stream_response(), media_type='text/event-stream')
+        return StreamingResponse(
+            stream_response(), 
+            media_type="text/event-stream",
+            headers={
+                "X-Conversation-Id": conversation_id,
+                "X-Message-Id":message_id
+                }
+        )
     
     def report(self, body, current_user):
         try:
